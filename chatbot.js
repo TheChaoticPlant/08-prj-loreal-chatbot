@@ -5,14 +5,14 @@ const chatForm = document.getElementById("chat-form");
 const userInput = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
 
-// System prompt: guides the bot to only answer L’Oréal-related questions
+// System prompt for L'Oréal relevance
 const systemPrompt =
-  "You are a helpful assistant for L’Oréal. Only answer questions about L’Oréal products, beauty routines, recommendations, or beauty-related topics. If the question is unrelated, politely reply: 'Sorry, I can only answer questions about L’Oréal products, routines, or beauty topics.'";
+  "You are a helpful assistant for L’Oréal. Only answer questions about L’Oréal products, beauty routines, or recommendations. If the question is unrelated, politely reply that you can only answer questions about L’Oréal.";
 
-// Store the conversation history for context awareness
+// Conversation history
 let conversation = [{ role: "system", content: systemPrompt }];
 
-// Function to add a message to the chat window
+// Add message to chat window
 function addMessage(text, sender) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("msg", sender);
@@ -21,24 +21,21 @@ function addMessage(text, sender) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// Show initial greeting
+// Initial greeting
 addMessage("👋 Hello! How can I help you today?", "ai");
 
-// Handle form submission
+// Handle form submit
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = userInput.value.trim();
   if (!message) return;
 
-  // Add user's message to chat and conversation history
   addMessage(message, "user");
   conversation.push({ role: "user", content: message });
   userInput.value = "";
 
-  // Show loading message
   addMessage("Thinking...", "ai");
 
-  // Get AI response from OpenAI via Cloudflare Worker
   const aiReply = await getAIResponse();
 
   // Remove loading message
@@ -47,25 +44,20 @@ chatForm.addEventListener("submit", async (e) => {
     chatWindow.removeChild(loadingMsg);
   }
 
-  // Add AI reply to chat and conversation history
   addMessage(aiReply, "ai");
   conversation.push({ role: "assistant", content: aiReply });
 });
 
-// Function to get AI response from Cloudflare Worker
+// Fetch AI response from Worker
 async function getAIResponse() {
-  // Only send the last 10 messages for context (including system prompt)
+  // Send last 10 messages for context
   const messagesToSend = conversation.slice(-11);
 
-  // Prepare request body for OpenAI Chat Completions API
   const body = JSON.stringify({
-    model: "gpt-4o",
     messages: messagesToSend,
-    max_tokens: 200,
   });
 
   try {
-    // Send request to Cloudflare Worker (which securely calls OpenAI)
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -73,16 +65,14 @@ async function getAIResponse() {
     });
     const data = await response.json();
 
-    // Return the AI's reply
+    // OpenAI's response format
     if (data.choices && data.choices.length > 0) {
       return data.choices[0].message.content.trim();
-    } else if (data.reply) {
-      return data.reply.trim();
     } else {
       return "Sorry, I couldn't understand that. Please try again!";
     }
   } catch (error) {
-    console.log(error);
+    console.log("Fetch error:", error);
     return "Sorry, there was a problem connecting to the AI.";
   }
 }

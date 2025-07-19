@@ -1,7 +1,7 @@
-// Copy this code into your Cloudflare Worker script
-
+// Cloudflare Worker script for secure OpenAI API calls
 export default {
   async fetch(request, env) {
+    // Set CORS headers so browser requests work
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -14,16 +14,19 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    const apiKey = env.OPENAI_API_KEY; // Make sure to name your secret OPENAI_API_KEY in the Cloudflare Workers dashboard
+    // Get API key from Cloudflare secret
+    const apiKey = env.OPENAI_API_KEY;
     const apiUrl = "https://api.openai.com/v1/chat/completions";
     const userInput = await request.json();
 
+    // Prepare request for OpenAI
     const requestBody = {
       model: "gpt-4o",
       messages: userInput.messages,
-      max_tokens: 300, // <-- correct property name
+      max_tokens: 300,
     };
 
+    // Send request to OpenAI
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -35,23 +38,20 @@ export default {
 
     const data = await response.json();
 
+    // Return response to browser
     return new Response(JSON.stringify(data), { headers: corsHeaders });
   },
 };
 
-// DOM elements
+// Get DOM elements
 const chatForm = document.getElementById("chat-form");
 const userInput = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
 
-// System prompt for L'Oréal relevance
-const systemPrompt =
-  "You are a helpful assistant for L’Oréal. Only answer questions about L’Oréal products, beauty routines, or recommendations. If the question is unrelated, politely reply that you can only answer questions about L’Oréal.";
-
-// Conversation history
+// Conversation history with system prompt for context
 let conversation = [{ role: "system", content: systemPrompt }];
 
-// Add message to chat window
+// Function to add a message to the chat window
 function addMessage(text, sender) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("msg", sender);
@@ -60,7 +60,7 @@ function addMessage(text, sender) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// Initial greeting
+// Show initial greeting
 addMessage("👋 Hello! How can I help you today?", "ai");
 
 // Handle form submit
@@ -89,7 +89,7 @@ chatForm.addEventListener("submit", async (e) => {
 
 // Fetch AI response from Worker
 async function getAIResponse() {
-  // Send last 10 messages for context
+  // Only send the last 10 messages for context
   const messagesToSend = conversation.slice(-11);
 
   const body = JSON.stringify({
@@ -104,14 +104,14 @@ async function getAIResponse() {
     });
     const data = await response.json();
 
-    // OpenAI's response format
+    // Display AI's reply if available
     if (data.choices && data.choices.length > 0) {
       return data.choices[0].message.content.trim();
     } else {
       return "Sorry, I couldn't understand that. Please try again!";
     }
   } catch (error) {
-    console.log(error);
+    console.log("Fetch error:", error);
     return "Sorry, there was a problem connecting to the AI.";
   }
 }
