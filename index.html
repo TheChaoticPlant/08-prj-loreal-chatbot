@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat Assistant</title>
+    <title>L’Oréal Chatbot</title>
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
@@ -17,50 +17,61 @@
 
   <body>
     <div class="page-wrapper">
-      <!------- Header / Branding ------->
+      <!-- L’Oréal logo in a gold bar -->
+      <div class="logo-container">
+        <!-- SVG logo for crisp display -->
+        <svg
+          width="200"
+          height="60"
+          viewBox="0 0 200 60"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label="L'Oréal logo"
+        >
+          <text
+            x="0"
+            y="45"
+            font-family="Arial, Helvetica, sans-serif"
+            font-size="48"
+            fill="#231F20"
+            font-weight="bold"
+          >
+            L’ORÉAL
+          </text>
+        </svg>
+      </div>
       <header class="site-header">
-        <h1 class="site-title">Smart Product Advisor</h1>
+        <h1 class="site-title">Welcome to L’Oréal Chatbot</h1>
+        <p>Ask anything about L’Oréal products, beauty tips, or our brand!</p>
       </header>
-
-      <!------- Chat Area ------->
       <main>
         <section class="chatbox">
-          <div id="chatWindow" class="chat-window">
-            <!-- messages will be appended here via JS -->
+          <div class="chat-window" id="chat-window">
+            <!-- Messages will appear here -->
           </div>
-
-          <form id="chatForm" class="chat-form">
-            <label for="userInput" class="visually-hidden">Message</label>
+          <form class="chat-form" id="chat-form" autocomplete="off">
+            <label for="user-input" class="visually-hidden">Your message</label>
             <input
-              id="userInput"
-              name="userInput"
+              id="user-input"
               type="text"
-              placeholder="Ask me about products or routines…"
-              autocomplete="off"
+              placeholder="Type your message..."
               required
             />
-            <button type="submit" id="sendBtn">
+            <button type="submit" aria-label="Send">
               <span class="material-icons">send</span>
-              <span class="visually-hidden">Send</span>
             </button>
           </form>
         </section>
       </main>
-
-      <!------- Footer Links ------->
       <footer class="site-footer">
-        <p>&copy; 2025 Company Name. All rights reserved.</p>
-        <nav>
-          <!-- These URLs are placeholders -->
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Use</a>
-          <a href="#">Contact</a>
-        </nav>
+        &copy; 2025 L’Oréal. For learning purposes only.
       </footer>
     </div>
-
-    <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
-    <script src="secrets.js"></script>
-    <script src="script.js"></script>
+    <!-- Link to your JavaScript file -->
+    <script src="chatbot.js"></script>
+    <!-- Google Material Icons for the send button (optional) -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
   </body>
 </html>

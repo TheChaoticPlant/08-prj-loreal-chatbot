@@ -1,57 +1,18 @@
-// Copy this code into your Cloudflare Worker script
+// Beginner-friendly L’Oréal chatbot using OpenAI's gpt-4o model
 
-export default {
-  async fetch(request, env) {
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Content-Type": "application/json",
-    };
-
-    // Handle CORS preflight requests
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    const apiKey = env.OPENAI_API_KEY; // Make sure to name your secret OPENAI_API_KEY in the Cloudflare Workers dashboard
-    const apiUrl = "https://api.openai.com/v1/chat/completions";
-    const userInput = await request.json();
-
-    const requestBody = {
-      model: "gpt-4o",
-      messages: userInput.messages,
-      max_tokens: 300, // <-- correct property name
-    };
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const data = await response.json();
-
-    return new Response(JSON.stringify(data), { headers: corsHeaders });
-  },
-};
-
-// DOM elements
+// Get DOM elements
 const chatForm = document.getElementById("chat-form");
 const userInput = document.getElementById("user-input");
 const chatWindow = document.getElementById("chat-window");
 
-// System prompt for L'Oréal relevance
+// System prompt: guides the bot to only answer L’Oréal-related questions
 const systemPrompt =
-  "You are a helpful assistant for L’Oréal. Only answer questions about L’Oréal products, beauty routines, or recommendations. If the question is unrelated, politely reply that you can only answer questions about L’Oréal.";
+  "You are a helpful assistant for L’Oréal. Only answer questions about L’Oréal products, beauty routines, recommendations, or beauty-related topics. If the question is unrelated, politely reply: 'Sorry, I can only answer questions about L’Oréal products, routines, or beauty topics.'";
 
-// Conversation history
+// Store the conversation history for context awareness
 let conversation = [{ role: "system", content: systemPrompt }];
 
-// Add message to chat window
+// Function to add a message to the chat window
 function addMessage(text, sender) {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("msg", sender);
@@ -60,21 +21,24 @@ function addMessage(text, sender) {
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// Initial greeting
+// Show initial greeting
 addMessage("👋 Hello! How can I help you today?", "ai");
 
-// Handle form submit
+// Handle form submission
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const message = userInput.value.trim();
   if (!message) return;
 
+  // Add user's message to chat and conversation history
   addMessage(message, "user");
   conversation.push({ role: "user", content: message });
   userInput.value = "";
 
+  // Show loading message
   addMessage("Thinking...", "ai");
 
+  // Get AI response from OpenAI via Cloudflare Worker
   const aiReply = await getAIResponse();
 
   // Remove loading message
@@ -83,20 +47,25 @@ chatForm.addEventListener("submit", async (e) => {
     chatWindow.removeChild(loadingMsg);
   }
 
+  // Add AI reply to chat and conversation history
   addMessage(aiReply, "ai");
   conversation.push({ role: "assistant", content: aiReply });
 });
 
-// Fetch AI response from Worker
+// Function to get AI response from Cloudflare Worker
 async function getAIResponse() {
-  // Send last 10 messages for context
+  // Only send the last 10 messages for context (including system prompt)
   const messagesToSend = conversation.slice(-11);
 
+  // Prepare request body for OpenAI Chat Completions API
   const body = JSON.stringify({
+    model: "gpt-4o",
     messages: messagesToSend,
+    max_tokens: 200,
   });
 
   try {
+    // Send request to Cloudflare Worker (which securely calls OpenAI)
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -104,9 +73,11 @@ async function getAIResponse() {
     });
     const data = await response.json();
 
-    // OpenAI's response format
+    // Return the AI's reply
     if (data.choices && data.choices.length > 0) {
       return data.choices[0].message.content.trim();
+    } else if (data.reply) {
+      return data.reply.trim();
     } else {
       return "Sorry, I couldn't understand that. Please try again!";
     }
